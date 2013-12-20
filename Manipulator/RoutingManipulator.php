@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * This file is part of the Symfony package.
  *
  * (c) Fabien Potencier <fabien@symfony.com>
@@ -59,14 +59,42 @@ class RoutingManipulator extends Manipulator
         }
 
         $code = sprintf("%s:\n", Container::underscore(substr($bundle, 0, -6)).('/' !== $prefix ? '_'.str_replace('/', '_', substr($prefix, 1)) : ''));
-        if ('annotation' == $format) {
-            $code .= sprintf("    resource: \"@%s/Controller/\"\n    type:     annotation\n", $bundle);
-        } else {
+        if ('php' == $format) {
+            $code = $current;
+            if (empty($current)) {
+                $code .= '<?php' . "\n" ;
+                $code .= 'use Symfony\Component\Routing\RouteCollection;' . "\n" ;
+                $code .= '$collection = new RouteCollection();' . "\n" ;
+            } else {
+                $code = str_replace('return $collection;', '', $code);
+            }
+            $code .= sprintf('$collection->addCollection($loader->import("%s/Resources/config/routing.php"), \'%s\');',
+                $bundle, $prefix);
+            $code .= "\n";
+            $code .= 'return $collection;';
+
+        } elseif ('xml' == $format) {
+            $xml = simplexml_load_string($current);
+            $newRoute = $xml->addChild('import');
+            $newRoute->addAttribute('resource', $bundle . '/Resources/config/routing.xml');
+            $newRoute->addAttribute('prefix', $prefix);
+
+            $dom = new \DOMDocument('1.0');
+            $dom->preserveWhiteSpace = false;
+            $dom->formatOutput = true;
+            $dom->loadXML($xml->asXML());
+            $code = $dom->saveXML();
+
+        } elseif ('yml' == $format) {
             $code .= sprintf("    resource: \"@%s/Resources/config/%s.%s\"\n", $bundle, $path, $format);
+
+            $code .= sprintf("    prefix:   %s\n", $prefix);
+            $code .= "\n";
+            $code .= $current;
+        } else {
+            // If $format == annotations or unknown format - do nothing
+            return true;
         }
-        $code .= sprintf("    prefix:   %s\n", $prefix);
-        $code .= "\n";
-        $code .= $current;
 
         if (false === file_put_contents($this->file, $code)) {
             return false;
