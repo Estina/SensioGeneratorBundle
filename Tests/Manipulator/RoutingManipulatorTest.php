@@ -15,7 +15,7 @@ namespace Sensio\Bundle\GeneratorBundle\Tests\Manipulator;
 use Sensio\Bundle\GeneratorBundle\Manipulator\RoutingManipulator;
 use Symfony\Component\Filesystem\Filesystem;
 
-class ManipulatorTest extends \PHPUnit_Framework_TestCase
+class RoutingManipulatorTest extends \PHPUnit_Framework_TestCase
 {
     protected $file;
     protected $routingManipulator;
@@ -46,9 +46,8 @@ class ManipulatorTest extends \PHPUnit_Framework_TestCase
         $prefix = '/bar';
         $resultBar = $this->routingManipulator->addResource('FoobarBundle', 'yml', $prefix, $path);
 
-        $this->assertTrue($resultBar );
+        $this->assertTrue($resultBar);
         $content = file_get_contents($this->file);
-
 
         $this->assertContains("foobar_bar:\n", $content);
         $this->assertContains('@FoobarBundle/Resources/config/' . $path . '.yml', $content);
@@ -69,11 +68,17 @@ class ManipulatorTest extends \PHPUnit_Framework_TestCase
         $prefix = '/bar';
         $resultBar = $this->routingManipulator->addResource('FoobarBundle', 'php', $prefix, $path);
 
-
         $this->assertTrue($resultBar);
 
         $content = file_get_contents($this->file);
-        $this->assertContains(sprintf('$collection->addCollection($loader->import("%s/Resources/config/%s.php"), \'%s\');', 'FoobarBundle', $path, $prefix), $content);
+        $this->assertContains(sprintf(
+                '$collection->addCollection($loader->import("%s/Resources/config/%s.php"), \'%s\');',
+                'FoobarBundle',
+                $path,
+                $prefix
+            ),
+            $content
+        );
 
         $this->assertContains('return $collection;', $content);
 
@@ -93,7 +98,13 @@ class ManipulatorTest extends \PHPUnit_Framework_TestCase
         $this->assertContains('use Symfony\Component\Routing\RouteCollection;', $content);
         $this->assertContains('$collection = new RouteCollection();', $content);
 
-        $this->assertContains(sprintf('$collection->addCollection($loader->import("%s/Resources/config/%s.php"), \'%s\');', 'FooBundle', $path, $prefix), $content);
+        $this->assertContains(sprintf(
+                '$collection->addCollection($loader->import("%s/Resources/config/%s.php"), \'%s\');',
+                'FooBundle',
+                $path,
+                $prefix
+            ),
+            $content);
 
         $this->assertContains('return $collection;', $content);
     }
@@ -105,7 +116,7 @@ class ManipulatorTest extends \PHPUnit_Framework_TestCase
         $result = $this->routingManipulator->addResource('FooBundle', 'yml', $prefix, $path);
 
         $this->assertTrue($result);
-        
+
         $content = file_get_contents($this->file);
 
         $this->assertContains("foo:\n", $content);
@@ -134,7 +145,9 @@ EOT;
 
         $content = file_get_contents($this->file);
 
-        $this->assertContains(sprintf('<import resource="%s/Resources/config/%s.xml" prefix="%s"/>', 'FooBundle', $path, $prefix ), $content);
+        $this->assertContains(sprintf('<import resource="%s/Resources/config/%s.xml" prefix="%s"/>',
+                'FooBundle', $path, $prefix ),
+            $content);
     }
 
     public function testRouteAlreadyLoaded()
@@ -142,9 +155,9 @@ EOT;
         $path = 'routing';
         $prefix = '/';
         $result = $this->routingManipulator->addResource('FooBundle', 'yml', $prefix, $path);
-        try{
+        try {
             $resultFailed = $this->routingManipulator->addResource('FooBundle', 'yml', $prefix, $path);
-        } catch(\RuntimeException $e){
+        } catch (\RuntimeException $e) {
             $this->assertContains(sprintf('Bundle "%s" is already imported.', 'FooBundle'), $e->getMessage());
             $resultFailed = false;
         }
@@ -165,7 +178,10 @@ EOT;
             $this->fail(sprintf('file_put_contents(%s): failed to open stream: Permission denied', $this->file));
         } catch (\RuntimeException $e) {
             //$this->assertTrue($filesystem->chmod($this->file, 0777));
-            $this->assertEquals(sprintf('file_put_contents(%s): failed to open stream: Permission denied', $this->file), $e->getMessage());
+            $this->assertEquals(
+                sprintf('file_put_contents(%s): failed to open stream: Permission denied', $this->file),
+                $e->getMessage()
+            );
         }
     }
 
@@ -190,10 +206,12 @@ EOT;
         $content = file_get_contents($this->file);
 
         $this->assertTrue($result);
-        $this->assertContains(sprintf('<import resource="%s/Resources/config/%s.xml" prefix="%s"/>', 'FoobarBundle', $path, '/bar'), $content);
-        $this->assertContains(sprintf('<import resource="%s/Resources/config/%s.xml" prefix="%s"/>', 'FooBundle', $path, $prefix ), $content);
-
-
+        $this->assertContains(sprintf('<import resource="%s/Resources/config/%s.xml" prefix="%s"/>',
+                'FoobarBundle', $path, '/bar'),
+            $content);
+        $this->assertContains(sprintf('<import resource="%s/Resources/config/%s.xml" prefix="%s"/>',
+                'FooBundle', $path, $prefix ),
+            $content);
 
     }
 
